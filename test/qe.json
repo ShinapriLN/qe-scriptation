@@ -1,0 +1,64 @@
+{
+    "main": {
+        "project-dir": "test-project",
+        "pseudo-dir": "pps",
+        "start_at": "loop-2",
+        "n_proc": 4
+    },
+    "default": {
+        "control": {
+            "calculation"   : "scf",
+            "restart_mode"  : "from_scratch",
+            "prefix"        : "silicon",
+            "pseudo_dir"    : "./pseudo/",
+            "outdir"        : "./tmp/",
+            "verbosity"     : "high"
+        },
+        "system": {
+            "ibrav"       : 2,
+            "celldm(1)"   : 10.26,
+            "nat"         : 2,
+            "ntyp"        : 1,
+            "ecutwfc"     : 30.0,
+            "ecutrho"     : 240.0,
+            "occupations" : "fixed"
+        },
+        "electrons": {
+            "conv_thr"    : 1.0e-8,
+            "mixing_beta" : 0.7
+        },
+        "atomic_species": [
+            "Si  28.085  Si.pbe-n-rrkjus_psl.1.0.0.UPF"
+        ],
+        "atomic_positions (alat)": [
+            "Si 0.00 0.00 0.00",
+            "Si 0.25 0.25 0.25"
+        ],
+        "k_points (automatic)": "6 6 6 1 1 1"
+    },
+    "conv_test": {
+        
+    },
+    "relax": {
+
+    },
+    "loop": [
+        {
+            "system": {
+                "ecutwfc": "$script script.test_module:get_one_two_three",
+                "ecutrho": 200.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 50.0,
+                "ecutrho": 290.0
+            }
+        },
+        {
+            "k_points (automatic)": "$script script.kp:get_kpoints"
+        }
+    ]
+}
+
+    
