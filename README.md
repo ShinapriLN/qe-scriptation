@@ -1,37 +1,85 @@
 # qe-scriptation [still unorganized]
 
-1. write quantum espresso input in json file
-2. specify the path of json in python script
+**main**
+- `project_dir` - project directory for calculation
+- `pseudo_dir`- path to pseudopotentials directory
+- `n_proc` - number of process used with open mpi ( default is 4 )
+- `default_bin` - binary use in calculation as default ( default is `pw.x` )
+- `bin` - organize what key to use what binary
+- `calc_from_key` - specify key(s) to make the key calculate from that job
+- `prevent_default_script` - specify key to prevent default script but use it's own
+- `except` - specify key(s) to prevent the key from calculation
+- `include` - specify key(s) to only include in calculation
+- `start_at` - specify a key to start ( default is first key below `default` if not exists start from `default` )
 
-the script uses open mpi as default. 
-
+### Example
 ```json
-"main": {
-    "project-dir": "test-project",  // project directory
-    "pseudo-dir": "pps",            // path of pseudopotential
-                // loop-n specify the key `loop` and the n-th element          
-    "start_at": "loop-2",           // specific starting position 
-    "except": ["relax"],            // not include in calculation
-    "include": ["conv_test"],       // include only in calculation
-    "n_proc": 4                     // num processing (default = 4)
+{
+    "main": {
+        "project_dir": "test-project",
+        "pseudo_dir": "pps",
+        "n_proc": 4,
+        "default_bin": "pw.x",
+        "bin": {
+            "loop-2": "bands.x"
+        },
+        "calc_from_key": {
+            "loop-2": "relax",
+            "loop-1": "relax"
+        },
+        "prevent_default_script": ["conv-0", "conv-1"],
+        "start_at": "conv-1",
+        "except": ["loop-2"]
+    },
+    "default": {...},
+    "conv": [{...}, {...}],
+    "relax": {...},
+    "loop": [{...}, {...}]
 }
 ```
 
-`except` and `include` can't be specified in the same time, 
-if there is no `except` but `include` the calculation only run from the key specified in `include`.
-if there is `except` but no `include` the calculation run all keys except keys that are in the `except`
-If there is no any of both `except` and `include` the calculation run all keys starting from specific in `start_at`.
-If there is no `start_at` the calculation start at the after specify key of 'default' key.
-If there is no any key after 'default' then the calculation start calculate from 'default' key.
+**default**
+*default quantum espresso script write in lower case*
+
+```
+&NAMELIST
+    ...
+/
+CARD
+    ...
+```
+
+can be written as 
+
+```json
+"namelist": {
+    ...
+},
+"namelist_1": {
+    "key_1": "val_1",
+    "key_2": "val_2",
+    "key_3": "val_3"
+},
+"card": [...],          // or
+"card_1": "...",        // string
+"card_2": [...],        // array each element each line
+```
+
+**below the default**
+*any key below the default are assumed as a script*
 
 ```json
 {
-    "k_points (automatic)": "$script script.kp:get_kpoints"
+    "main": {...},
+    "default": {...},
+    "key_1": {...},
+    "key_2": {...},
+    "key_3_loop": [
+        {...}, 
+        {...}
+    ]
 }
 ```
 
-the script eval at runtime or calculation time so can be added script as `$script python.file:function_name`. can be used to write a function that parse the previous job's output to be used as the current input.
-
-**the flow run from up to down**
-
-use `[]` for loop, or `{}` if not loop.
+- `key_1` and `key_2` are contain values to override the `default` ( if not specify prevent `key_1` and `key_2` to not use the `default` )
+- `key_3_loop` have values of array type so will be looped and created key like `key_3_loop-1`, `key_3_loop-2`, and so on.

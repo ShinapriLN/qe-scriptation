@@ -1,7 +1,67 @@
 from pprint import pprint as pp
 import json
 
-NAMELIST = ["control", "system", "electrons", "ions", "cell", "fcp", "rism"]
+NAMELIST = [
+    ### PWscf
+    # pw.x & cp.x 
+    "control", "system", "electrons", "ions", "cell", "fcp", "rism",
+
+    # hp.x
+    "inputhp",
+
+    # bgw2pw.x
+    "input_bgw2pw",
+
+    # pw2bgw.x
+    "input_pw2bgw",
+
+    # pwcond.x 
+    "inputcond",
+
+    # pprism.x
+    "inputpp", # & cppp.x 
+    "plot",
+
+    # oscdft_et.x 
+    "oscdft_et_namelist",
+
+    ### PHonon
+    # ph.x 
+    "inputph",
+
+    # dynmat.x & matdyn.x & postahc.x & q2r.x & d3hess.x 
+    "input",
+
+    ### atomic, ld1.x
+    "input", "inputp", "test",
+
+    ### KCW, kcw.x 
+    "control", "wannier", "screen", "ham",
+
+    ### --- POST PROCESS ---
+    # pp.x
+    "inputpp", # pw2wannier90.x 
+    "plot",
+    # dos.x
+    "dos",
+    # bands.x 
+    "bands",
+    # band_interpolation.x
+    "interpolation",
+    # projwfc.x
+    "projwfc",
+    # molecularpdos.x 
+    "inputmopdos",
+    # ppp.x
+    "inputpp",
+    # ppacf.x
+    "ppacf",
+    # oscdft_pp.x
+    "oscdft_pp_namelist",
+]
+
+## constraint: PWneb, XSpectra, QEHeat
+## importexport_binary.x, 
 
 def get_data(path, validation=True, get_project_path=False):
     with open(path, "r") as f:
@@ -19,9 +79,22 @@ def item_str(items: dict | list | str):
     text = ""
     if isinstance(items, dict):
         for k, v in items.items():
-            text += f"   {k} = {v if not isinstance(v, str) else f"\'{v}\'"}\n"
+            
+
+            if isinstance(v, str) and v.startswith('$script'):
+                v = get_return_config(v)
+                if isinstance(v, bool):
+                    v = f".{v}.".lower()
+                text += f"   {k} = {v}\n"
+            elif isinstance(v, bool):
+                v = f".{v}.".lower()
+                text += f"   {k} = {v}\n"
+            else:
+                text += f"   {k} = {v if not isinstance(v, str) else f"\'{v}\'"}\n"
     elif isinstance(items, list):
         for v in items:
+            if isinstance(v, bool):
+                v = f".{v}.".lower()
             text += f"   {v}\n"
     else:
         text += f"   {items}\n"
@@ -52,6 +125,22 @@ def get_default(default: dict):
         script += "\n\n"
     return script
 
+def get_original(original: dict):
+    script = ""
+    for key, item in original.items():
+        
+        card, opt = split_opt(key)
+        if card.strip() in NAMELIST:
+            
+            script += f"&{card.upper()} {opt if opt is not None else ""}\n"
+            script += item_str(item) + "/"
+
+        else:
+            script += f"{card.upper()} {opt if opt is not None else ""}\n"
+            script += item_str(item)
+        script += "\n\n"
+    return script
+
 def get_replace_default_str(default: dict, replace: dict):
 
     for k, v in replace.items():
@@ -61,6 +150,8 @@ def get_replace_default_str(default: dict, replace: dict):
             v = get_return_config(v)
 
         if base_k in NAMELIST:
+            if isinstance(v, bool):
+                v = f".{v}."
             if isinstance(v, dict):
                 for i, el in v.items():
                     if isinstance(el, str) and el.startswith("$script"):
@@ -73,7 +164,8 @@ def get_replace_default_str(default: dict, replace: dict):
             keys_to_remove = [dk for dk in default if split_opt(dk)[0] == base_k]
             for dk in keys_to_remove:
                 default.pop(dk)
-            
+            if isinstance(v, bool):
+                v = f".{v}."
             default[k] = v
 
     script = get_default(default)
@@ -108,7 +200,7 @@ def get_replace_default_json(default: dict, replace: dict):
 import pathlib
 
 def prepare_path_workingspace(base: dict):
-    project_dir = pathlib.Path(base['project-dir'])
+    project_dir = pathlib.Path(base['project_dir'])
     current_dir = pathlib.Path.cwd()
     project_path = current_dir/project_dir
     project_path.mkdir(parents=True, exist_ok=True)
@@ -117,9 +209,9 @@ def prepare_path_workingspace(base: dict):
 
 def valid_pp_path(data: dict, project_path: pathlib.Path):
 
-    assert 'pseudo-dir' in data['main'].keys(), "pseudo-dir is missing in config"
+    assert 'pseudo_dir' in data['main'].keys(), "pseudo_dir is missing in config"
 
-    pp_path = project_path / ".." / pathlib.Path(data['main']["pseudo-dir"])
+    pp_path = (project_path / ".." / pathlib.Path(data['main']["pseudo_dir"])).resolve()
 
     data['default']['control']['pseudo_dir'] = str(pp_path)
 
@@ -223,9 +315,9 @@ def process_at_runtime(json_path: str) -> dict:
 
     return pending
 
-def run_qe(job_id, input_file, output_file, n_proc = 4, wait=True):
+def run_qe(job_id, input_file, output_file, n_proc = 4, wait=True, bin="pw.x"):
 
-    cmd = f"mpirun -np {n_proc} pw.x -in {input_file} > {output_file}"
+    cmd = f"mpirun -np {n_proc} {bin} -in {input_file} > {output_file}"
     
     print(f"🚀 Running job id: {job_id}\n🫱  At path: {input_file} ...", end="", flush=True)
     
@@ -268,15 +360,43 @@ def write_from_json_script(job_id: str, job_data: dict):
     with open(job_data['path'] / f"{job_id}.in", "w") as f:
         f.write(script)
 
-def write_from_json_script_at_runtime(job_id: str, job_data: dict, default: dict):
+import shutil
 
-    script = get_replace_default_str(default, job_data['script'])
+def write_from_json_script_at_runtime(
+    job_id: str, 
+    job_data: dict, 
+    default: dict | None, 
+    key_to_cp: str | None,
+):
+    
+    if default is not None:
+        script = get_replace_default_str(default, job_data['script'])
+    else:
+        script = get_original(job_data['script'])
 
-    pathlib.Path.mkdir(job_data['path'], parents=True, exist_ok=True)
+    if key_to_cp is not None:
+        
+        try:
+            source_path = (job_data['path'] / ".." / key_to_cp).resolve()
+            shutil.copytree(source_path, job_data['path'])
+            print(f"🫨  Continue from '{key_to_cp}' as path '{job_data['path']}'")
 
-    with open(job_data['path'] / f"{job_id}.in", "w") as f:
-        f.write(script)
+            
+        except FileExistsError:
+            print(f"😥 [Error] Destination directory '{job_data['path']}' already exists, \n💫 Script {job_id}.in is created anyway!")
+        except OSError as e:
+            print(f"😥 [Error] {e}")
+        
+        with open(job_data['path'] / f"{job_id}.in", "w") as f:
+            f.write(script)
+    else:
 
+        pathlib.Path.mkdir(job_data['path'], parents=True, exist_ok=True)
+
+        with open(job_data['path'] / f"{job_id}.in", "w") as f:
+            f.write(script)
+
+import os
 
 def start_simulating(json_path: str, run=True):
     import time
@@ -287,10 +407,16 @@ def start_simulating(json_path: str, run=True):
 
     assert not ("except" in meta.keys() and "include" in meta.keys()), "😔 `except` and `include` can't be specified at the same time"
     n_proc = meta['n_proc'] if "n_proc" in meta.keys() else 4
+    default_bin = meta['default_bin'] if 'default_bin' in meta.keys() else "pw.x"
+    job_bins = meta['bin'] if 'bin' in meta.keys() else None
+
+    calc_from_key = meta['calc_from_key'] if "calc_from_key" in meta.keys() else None
+    key_to_prevent_default = meta['prevent_default_script'] if "prevent_default_script" in meta.keys() else []
 
     pending = process_at_runtime(json_path) 
 
-    start_at = meta['start_at'] if "start_at" in meta.keys() else list(meta.keys())[2] if len(meta.keys()) > 2 else "default"
+    start_at = meta['start_at'] if "start_at" in meta.keys() else list(data.keys())[2] if len(data.keys()) > 2 else "default"
+
     except_job = meta['except'] if "except" in meta.keys() else []
     include = meta['include'] if "include" in meta.keys() else pending.keys()
 
@@ -309,17 +435,31 @@ def start_simulating(json_path: str, run=True):
             print(f"🫠  [SKIP] job id: {job_id}... since either not include or in exception\n")
             continue
         
+        job_bin = None
+        if job_bins is not None and job_id in job_bins:
+            job_bin = job_bins[job_id]
+
+
+        key_to_cp = calc_from_key[job_id] if job_id in calc_from_key else None
+        
         write_from_json_script_at_runtime(
-            job_id, job_data, default=data['default'].copy()
+            job_id, job_data, 
+            default=data['default'].copy() if job_id not in key_to_prevent_default else None, 
+            key_to_cp=key_to_cp
         )
 
         if run:
+            current_dir = os.curdir
+            os.chdir(job_data['path'])
             run_qe(
                 job_id,
                 job_data['path'] / f"{job_id}.in", 
                 job_data['path'] / f"{job_id}.out", 
-                n_proc
+                n_proc,
+                bin=job_bin if job_bin is not None else default_bin
             )
+            os.chdir(current_dir)
+
 
     print(f"🫡  [DONE] total time usage... {time.time() - start_time:.3f}s")
 
@@ -327,4 +467,3 @@ def start_simulating(json_path: str, run=True):
 start_simulating("test/qe.json")
 
 # pp(process_at_runtime("test/qe.json"))
-

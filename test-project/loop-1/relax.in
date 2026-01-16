@@ -2,7 +2,7 @@
    calculation = 'scf'
    restart_mode = 'from_scratch'
    prefix = 'silicon'
-   pseudo_dir = '/home/shinapri/Documents/quantum-espresso/scriptation-2/test-project/../pps'
+   pseudo_dir = '/home/shinapri/Documents/quantum-espresso/scriptation-2/pps'
    outdir = './tmp/'
    verbosity = 'high'
 /

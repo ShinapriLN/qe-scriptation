@@ -1,9 +1,13 @@
 {
     "main": {
-        "project-dir": "test-project",
-        "pseudo-dir": "pps",
-        "start_at": "loop-2",
-        "n_proc": 4
+        "project_dir": "test-project",
+        "pseudo_dir": "pps",
+        "n_proc": 4,
+        "default_bin": "pw.x",
+        "calc_from_key": {
+            "loop-2": "relax",
+            "loop-1": "relax"
+        }
     },
     "default": {
         "control": {
@@ -11,7 +15,6 @@
             "restart_mode"  : "from_scratch",
             "prefix"        : "silicon",
             "pseudo_dir"    : "./pseudo/",
-            "outdir"        : "./tmp/",
             "verbosity"     : "high"
         },
         "system": {
