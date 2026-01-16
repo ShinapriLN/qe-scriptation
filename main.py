@@ -69,7 +69,7 @@ def get_data(path, validation=True, get_project_path=False):
 
     project_path = prepare_path_workingspace(data['main'])
     if validation:
-        data = valid_pp_path(data, project_path)
+        data = valid_pp_path(data, path)
 
     if not get_project_path:
         return data
@@ -143,6 +143,35 @@ def get_original(original: dict):
 
 def get_replace_default_str(default: dict, replace: dict):
 
+    namelist_dict = {}
+    other_dict = {}
+
+    for k, v in default.items():
+        base_k, _ = split_opt(k)
+        if k in NAMELIST:
+            if k not in namelist_dict:
+                namelist_dict[k] = v
+                continue
+
+            for sub_k, sub_v in v.items():
+                namelist_dict[k][sub_k] = sub_v
+        else:
+            other_dict[k] = v
+
+    for k, v in replace.items():
+        base_k, _ = split_opt(k)
+        if k in NAMELIST:
+            if k not in namelist_dict:
+                namelist_dict[k] = v
+                continue
+
+            for sub_k, sub_v in v.items():
+                namelist_dict[k][sub_k] = sub_v
+        else:
+            other_dict[k] = v
+
+    default = {**namelist_dict, **other_dict}
+
     for k, v in replace.items():
         base_k, _ = split_opt(k)
 
@@ -207,11 +236,18 @@ def prepare_path_workingspace(base: dict):
     return project_path
 
 
-def valid_pp_path(data: dict, project_path: pathlib.Path):
+def valid_pp_path(data: dict, json_path: pathlib.Path):
 
     assert 'pseudo_dir' in data['main'].keys(), "pseudo_dir is missing in config"
-
-    pp_path = (project_path / ".." / pathlib.Path(data['main']["pseudo_dir"])).resolve()
+    
+    if pathlib.Path(data['main']["pseudo_dir"]).is_absolute():
+        pp_path = pathlib.Path(data['main']["pseudo_dir"]).resolve()
+        data['default']['control']['pseudo_dir'] = str(pp_path)
+        return data
+    
+    
+    json_dir = pathlib.Path(json_path).parent
+    pp_path = (json_dir / pathlib.Path(data['main']["pseudo_dir"])).resolve()
 
     data['default']['control']['pseudo_dir'] = str(pp_path)
 
@@ -410,12 +446,14 @@ def start_simulating(json_path: str, run=True):
     default_bin = meta['default_bin'] if 'default_bin' in meta.keys() else "pw.x"
     job_bins = meta['bin'] if 'bin' in meta.keys() else None
 
-    calc_from_key = meta['calc_from_key'] if "calc_from_key" in meta.keys() else None
+    calc_from_key = meta['calc_from_key'] if "calc_from_key" in meta.keys() else {}
     key_to_prevent_default = meta['prevent_default_script'] if "prevent_default_script" in meta.keys() else []
 
     pending = process_at_runtime(json_path) 
 
-    start_at = meta['start_at'] if "start_at" in meta.keys() else list(data.keys())[2] if len(data.keys()) > 2 else "default"
+    start_at = meta['start_at'] if "start_at" in meta.keys() else \
+        f"{list(data.keys())[2]}-0" if len(data.keys()) > 2 and isinstance(data[list(data.keys())[2]], list) else \
+            list(data.keys())[2] if len(data.keys()) > 2 else "default"
 
     except_job = meta['except'] if "except" in meta.keys() else []
     include = meta['include'] if "include" in meta.keys() else pending.keys()
@@ -438,7 +476,6 @@ def start_simulating(json_path: str, run=True):
         job_bin = None
         if job_bins is not None and job_id in job_bins:
             job_bin = job_bins[job_id]
-
 
         key_to_cp = calc_from_key[job_id] if job_id in calc_from_key else None
         
@@ -464,6 +501,37 @@ def start_simulating(json_path: str, run=True):
     print(f"🫡  [DONE] total time usage... {time.time() - start_time:.3f}s")
 
 
-start_simulating("test/qe.json")
+start_simulating("config/mg2feh6.json")
 
 # pp(process_at_runtime("test/qe.json"))
+
+# import spglib
+# from ase import Atoms
+# from ase.io import read
+
+
+# atoms = read('/home/shinapri/Documents/quantum-espresso/scriptation-2/mg2feh6/Mg2FeH6.poscar')
+
+# lattice, scaled_pos, numbers = spglib.standardize_cell(
+#     (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers()), 
+#     to_primitive=True, 
+#     symprec=1e-5
+# )
+
+# # 3. สร้าง Atoms object ใหม่ที่เป็น 9 อะตอม
+# primitive_atoms = Atoms(
+#     numbers=numbers, 
+#     cell=lattice, 
+#     scaled_positions=scaled_pos, 
+#     pbc=True
+# )
+
+# # ดูพิกัดแบบ Crystal (Scaled)
+# print("--- ATOMIC_POSITIONS (crystal) ---")
+# for sym, pos in zip(primitive_atoms.get_chemical_symbols(), primitive_atoms.get_scaled_positions()):
+#     print(f"{sym} {pos[0]:.10f} {pos[1]:.10f} {pos[2]:.10f}")
+
+# # ดู Cell Parameters (เพื่อเอาไปใส่ ibrav=0 หรือคำนวณ celldm)
+# print("\n--- CELL_PARAMETERS (angstrom) ---")
+# for vector in primitive_atoms.get_cell():
+#     print(f"{vector[0]:.10f} {vector[1]:.10f} {vector[2]:.10f}")

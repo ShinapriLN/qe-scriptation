@@ -1,0 +1,146 @@
+{
+    "main": {
+        "project_dir": "Si",
+        "pseudo_dir": "/home/shinapri/Documents/quantum-espresso/scriptation-2/pps",
+        "n_proc": 4,
+        "default_bin": "pw.x",
+        "calc_from_key": {
+            "scf": "relax",
+            "nscf": "scf"
+        }
+    },
+    "default": {
+        "control": {
+            "calculation"   : "scf",
+            "restart_mode"  : "from_scratch",
+            "outdir": "./tmp",
+            "prefix"        : "silicon",
+            "verbosity"     : "high"
+        },
+        "system": {
+            "ibrav"       : 2,
+            "celldm(1)"   : 10.26,
+            "nat"         : 2,
+            "ntyp"        : 1,
+            "ecutwfc"     : 30.0,
+            "ecutrho"     : 240.0,
+            "occupations" : "fixed"
+        },
+        "electrons": {
+            "conv_thr"    : 1.0e-8,
+            "mixing_beta" : 0.7
+        },
+        "atomic_species": [
+            "Si  28.085  Si.pbe-n-rrkjus_psl.1.0.0.UPF"
+        ],
+        "atomic_positions (alat)": [
+            "Si 0.00 0.00 0.00",
+            "Si 0.25 0.25 0.25"
+        ],
+        "k_points (automatic)": "4 4 4 1 1 1"
+    },
+    "conv": [
+        {},
+        {
+            "system": {
+                "ecutwfc": 40.0,
+                "ecutrho": 320.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 50.0,
+                "ecutrho": 400.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 60.0,
+                "ecutrho": 480.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 70.0,
+                "ecutrho": 560.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 80.0,
+                "ecutrho": 640.0
+            }
+        },
+
+        {
+            "system": {
+                "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+                "ecutrho": "$script script.conv_new:get_best_ecutrho"
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+                "ecutrho": "$script script.conv_new:get_best_ecutrho"
+            },
+            "k_points (automatic)":"5 5 5 1 1 1"
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+                "ecutrho": "$script script.conv_new:get_best_ecutrho"
+            },
+            "k_points (automatic)":"6 6 6 1 1 1"
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+                "ecutrho": "$script script.conv_new:get_best_ecutrho"
+            },
+            "k_points (automatic)":"7 7 7 1 1 1"
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+                "ecutrho": "$script script.conv_new:get_best_ecutrho"
+            },
+            "k_points (automatic)":"8 8 8 1 1 1"
+        }
+    ],
+    "relax": {
+        "control": {
+            "calculation": "relax"
+        },
+        "system": {
+            "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+            "ecutrho": "$script script.conv_new:get_best_ecutrho"
+        },
+        "ions": {
+            "ion_dynamics": "bfgs"
+        },
+        "k_points (automatic)":"$script script.conv_new:get_best_kp"
+    },
+    "scf": {
+        "control": {
+            "calculation": "scf",
+            "restart_mode"  : "from_scratch"
+        },
+        "system": {
+            "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+            "ecutrho": "$script script.conv_new:get_best_ecutrho"
+        },
+        "k_points (automatic)":"$script script.conv_new:get_best_kp"
+    },
+    "nscf": {
+        "control": {
+            "calculation": "nscf"
+        },
+        "system": {
+            "ecutwfc": "$script script.conv_new:get_best_ecutwfc",
+            "ecutrho": "$script script.conv_new:get_best_ecutrho"
+        },
+        "k_points (automatic)":"$script script.conv_new:get_best_kp"
+    }
+}
+
+    

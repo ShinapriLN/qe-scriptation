@@ -1,0 +1,161 @@
+{
+    "main": {
+        "project_dir": "mg2feh6",
+        "pseudo_dir": "/home/shinapri/Documents/quantum-espresso/scriptation-2/pps",
+        "n_proc": 4,
+        "default_bin": "pw.x",
+        "calc_from_key": {
+            "scf": "relax",
+            "nscf": "scf"
+        },
+        "start_at": "scf"
+    },
+    "default": {
+        "control": {
+            "calculation" : "scf",
+            "restart_mode": "from_scratch",
+            "outdir"      : "./tmp",
+            "prefix"      : "mg2feh6",
+            "verbosity"   : "high"
+        },
+        "system": {
+            "ibrav"       : 0,
+            "nat"         : 9,
+            "ntyp"        : 3,
+            "ecutwfc"     : 30.0,
+            "ecutrho"     : 240.0,
+            "occupations" : "fixed"
+        },
+        "electrons": {
+            "conv_thr"    : 1.0e-8,
+            "mixing_beta" : 0.7
+        },
+        "atomic_species": [
+            "Mg 24.305 Mg.pbe-n-kjpaw_psl.0.3.0.UPF",
+            "Fe 55.845 Fe.pbe-spn-kjpaw_psl.0.2.1.UPF",
+            "H  1.008  H.pbe-rrkjus_psl.1.0.0.UPF"
+        ],
+        "atomic_positions (crystal)": [
+            "Mg 0.2500000000 0.2500000000 0.2500000000",
+            "Mg 0.7500000000 0.7500000000 0.7500000000",
+            "Fe 0.0000000000 0.0000000000 0.0000000000",
+            "H  0.7570259700 0.2429740300 0.7570259700",
+            "H  0.2429740300 0.2429740300 0.7570259700",
+            "H  0.7570259700 0.7570259700 0.2429740300",
+            "H  0.2429740300 0.7570259700 0.2429740300",
+            "H  0.2429740300 0.7570259700 0.7570259700",
+            "H  0.7570259700 0.2429740300 0.2429740300"
+        ],
+        "cell_parameters (angstrom)": [
+            "0.0000000000 3.1775303265 3.1775303265",
+            "3.1775303265 0.0000000000 3.1775303265",
+            "3.1775303265 3.1775303265 0.0000000000"
+        ],
+        "k_points (automatic)": "4 4 4 1 1 1"
+    },
+    "conv": [
+        {},
+        {
+            "system": {
+                "ecutwfc": 40.0,
+                "ecutrho": 320.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 50.0,
+                "ecutrho": 400.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 60.0,
+                "ecutrho": 480.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 70.0,
+                "ecutrho": 560.0
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": 80.0,
+                "ecutrho": 640.0
+            }
+        },
+
+        {
+            "system": {
+                "ecutwfc": "$script script.conv:get_best_ecutwfc",
+                "ecutrho": "$script script.conv:get_best_ecutrho"
+            }
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv:get_best_ecutwfc",
+                "ecutrho": "$script script.conv:get_best_ecutrho"
+            },
+            "k_points (automatic)":"5 5 5 1 1 1"
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv:get_best_ecutwfc",
+                "ecutrho": "$script script.conv:get_best_ecutrho"
+            },
+            "k_points (automatic)":"6 6 6 1 1 1"
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv:get_best_ecutwfc",
+                "ecutrho": "$script script.conv:get_best_ecutrho"
+            },
+            "k_points (automatic)":"7 7 7 1 1 1"
+        },
+        {
+            "system": {
+                "ecutwfc": "$script script.conv:get_best_ecutwfc",
+                "ecutrho": "$script script.conv:get_best_ecutrho"
+            },
+            "k_points (automatic)":"8 8 8 1 1 1"
+        }
+    ],
+    "relax": {
+        "control": {
+            "calculation": "relax"
+        },
+        "system": {
+            "ecutwfc": "$script script.conv:get_best_ecutwfc",
+            "ecutrho": "$script script.conv:get_best_ecutrho"
+        },
+        "ions": {
+            "ion_dynamics": "bfgs"
+        },
+        "k_points (automatic)":"$script script.conv:get_best_kp"
+    },
+    "scf": {
+        "control": {
+            "calculation": "scf"
+        },
+        "system": {
+            "ecutwfc": "$script script.conv:get_best_ecutwfc",
+            "ecutrho": "$script script.conv:get_best_ecutrho"
+        },
+        "k_points (automatic)":"$script script.conv:get_best_kp",
+        "atomic_positions (crystal)": "$script script.relax:get_relax_position"
+    },
+    "nscf": {
+        "control": {
+            "calculation": "nscf"
+        },
+        "system": {
+            "ecutwfc": "$script script.conv:get_best_ecutwfc",
+            "ecutrho": "$script script.conv:get_best_ecutrho"
+        },
+        "k_points (automatic)":"$script script.conv:get_best_kp",
+        "atomic_positions (crystal)": "$script script.relax:get_relax_position"
+    }
+}
+
+    
