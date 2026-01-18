@@ -1,14 +1,25 @@
 {
-    "main": {
+    "config": {
         "project_dir": "mg2feh6",
         "pseudo_dir": "/home/shinapri/Documents/quantum-espresso/scriptation-2/pps",
         "n_proc": 4,
-        "default_bin": "pw.x",
-        "calc_from_key": {
+        "binary_default": "pw.x",
+        "checkpoint_map": {
             "scf": "relax",
             "nscf": "scf"
         },
-        "start_at": "scf"
+        "start_at_key": "conv-5",
+        "exclude_keys": ["conv-7", "conv-9"],
+        "waiting": {
+            "A": "B",
+            "B": "C",
+            "C": "D",
+            "E": "D",
+            "F": "H",
+            "G": "F",
+            "D": "G"
+        },
+        "max_parallel": 4
     },
     "default": {
         "control": {
