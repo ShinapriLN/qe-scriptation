@@ -36,14 +36,12 @@ def progress_path(i, items: dict):
     return "->".join(path)
 
 # test = {
-#     # --- สายที่ 1: Main DFT Pipeline (วัสดุตัวหลัก) ---
 #     "nscf": "scf",
 #     "scf": "relax",
 #     "relax": "vc-relax",
 #     "vc-relax": "conv-test",
 #     "conv-test": "pseudo-setup",
 
-#     # --- สายที่ 2: Electronic Properties (วิเคราะห์ลึก) ---
 #     "plot_dos": "dos_calc",
 #     "dos_calc": "nscf_dense",
 #     "nscf_dense": "scf_converged",
@@ -51,18 +49,15 @@ def progress_path(i, items: dict):
 #     "bands_calc": "nscf_dense",
 #     "pdos_calc": "nscf_dense",
 
-#     # --- สายที่ 3: Optical Properties (สายใหม่) ---
 #     "abs_spectrum": "epsilon_calc",
 #     "epsilon_calc": "nscf_optical",
 #     "nscf_optical": "scf_optical",
 #     "scf_optical": "relax_optical",
 
-#     # --- สายที่ 4: Surface Science (ถ้าคุณทำ Slab) ---
 #     "work_function": "scf_slab",
 #     "scf_slab": "relax_slab",
 #     "relax_slab": "init_slab",
     
-#     # --- สายที่ 5: Maintenance ---
 #     "cleanup_tmp": "final_report",
 #     "final_report": "plot_all"
 # }
@@ -97,14 +92,11 @@ from collections import defaultdict
 results.sort(key=len, reverse=True)
 
 collapsed = []
-# ใช้ string ก้อนใหญ่เก็บ path ที่เราเลือกไว้แล้วเพื่อทำ index ค้นหาได้เร็ว
 big_search_pool = "" 
 
 for path in results:
-    # 2. เช็กว่า path นี้เคยโผล่ในตัวที่ยาวกว่าหรือยัง
     if path not in big_search_pool:
         collapsed.append(path)
-        # เพิ่มเข้าไปใน pool พร้อมตัวคั่น
         big_search_pool += path + "|"
 
 collapsed = [el.split("->") for el in collapsed]

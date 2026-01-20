@@ -3,11 +3,30 @@ from scriptation.scheduler import Scheduler
 from scriptation.executor import Executor
 
 import logging
+import time
+import argparse
+import os, sys
 
-logging.basicConfig(level=logging.INFO)
+def main(path):
+    preprocessor = Preprocessor(path)
+    scheduler = Scheduler(preprocessor)
+
+    executor = Executor()
+    executor.execute_batch(scheduler)
+
+
+if __name__ == "__main__":
+    sys.path.insert(0, os.getcwd())
     
-preprocessor = Preprocessor("/home/shinapri/Documents/quantum-espresso/scriptation-2/config/qe.json")
-scheduler = Scheduler(preprocessor)
+    logging.basicConfig(level=logging.INFO)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path", type=str, help="path of the json config file.")
 
-executor = Executor()
-executor.execute_batch(scheduler)
+    args = parser.parse_args()
+
+    start_time = time.time()
+
+    path = args.path
+    main(path)
+
+    logging.info(f"\n\n     🫡  [FINISH] total time usage... {time.time() - start_time:.3f}s")

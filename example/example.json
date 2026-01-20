@@ -1,16 +1,18 @@
 {
     "config": {
         "project_dir": "mg2feh6",
-        "pseudo_dir": "/home/shinapri/Documents/quantum-espresso/scriptation-2/pps",
-        "checkpoint_map": {
+        "pseudo_dir": "../pps",
+        "use_checkpoint": {
             "scf": "relax",
             "nscf": "scf"
         },
-        "parallel_map": [
+        "n_proc": 4,
+        "binary_default": "pw.x",
+        "sequence": [
             ["conv-[0-5]"],
             ["conv-6", "conv-7", "conv-[8-10]"]
         ],
-        "max_parallel": 4
+        "max_parallel": 3
     },
     "default": {
         "control": {

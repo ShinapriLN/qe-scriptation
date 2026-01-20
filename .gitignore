@@ -13,4 +13,14 @@ test-project/
 my-tmp/
 Silicon/
 Si/
-mg2feh6/
+mg2feh6*/
+tmp.py
+
+# vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+*.code-workspace

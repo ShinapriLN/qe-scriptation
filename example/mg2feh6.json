@@ -4,7 +4,7 @@
         "pseudo_dir": "/home/shinapri/Documents/quantum-espresso/scriptation-2/pps",
         "n_proc": 4,
         "binary_default": "pw.x",
-        "checkpoint_map": {
+        "use_checkpoint": {
             "scf": "relax",
             "nscf": "scf"
         },

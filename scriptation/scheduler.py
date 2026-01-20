@@ -11,6 +11,7 @@ from scriptation.utils import (
 import logging
 from itertools import batched
 import multiprocessing
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -82,19 +83,26 @@ class Scheduler:
         pending_list = list(pending)
 
         max_parallel = config.get("max_parallel", 1)
-        parallel_map = config.get("parallel_map", [[k] for k in data.pending.keys()])
+        sequence = config.get("sequence", [[k] for k in data.pending.keys()])
+        use_checkpoint = config.get("use_checkpoint", {})
 
         # set boundary from `start_at_key`, `exclude_keys` and apply to `include_keys` 
         is_start_at_key_in_config = "start_at_key" in config
-
-        logger.info(f"\n\n     ✍️  Start Calculation From {start_at_key}\n") \
-            if is_start_at_key_in_config else None
         
         start_at_key = config.get("start_at_key") if is_start_at_key_in_config \
             else f"{pending_list[1]}" if len(pending) > 1 else pending_list[0]
         
         start_at_key = start_at_key if not data.is_key_list(start_at_key) \
             else add_suffix(start_at_key, 0)
+        
+        if isinstance(start_at_key, str) and start_at_key not in pending_list:
+            for k in pending_list:
+                if k.startswith(start_at_key):
+                    start_at_key = k
+                    break
+        
+        logger.info(f"\n\n     ✍️  Start Calculation From {start_at_key}\n") \
+            if is_start_at_key_in_config else None
         
         start_at_idx = list(data.pending).index(start_at_key)
 
@@ -107,48 +115,55 @@ class Scheduler:
             ]
         )
 
-        # about parallel map
+        # about the sequences
         get_key_tmp = lambda k, i: f"{self.valid_str_range(k)[0]}-{i}"
         get_a_tmp = lambda k: self.valid_str_range(k)[1]
         get_b_tmp = lambda k: self.valid_str_range(k)[2] + 1
         is_condition_range = lambda k: "[" in k and "]" in k
-        parallel_map = [
+        sequence = [
             [
-                get_key_tmp(k, i) for k in arr if is_condition_range(k) for i in range(get_a_tmp(k), get_b_tmp(k)) 
-            ] + [
-                k  for k in arr if not is_condition_range(k)
+                k  for k in arr if not is_condition_range(k) and k in include_jobs
             ] 
-            
-            for arr in parallel_map
+            +
+            [
+                get_key_tmp(k, i) for k in arr if is_condition_range(k) \
+                    for i in range(get_a_tmp(k), get_b_tmp(k)) if get_key_tmp(k, i) in include_jobs 
+            ]
+            for arr in sequence
         ]
+        
+        sequence = [arr for arr in sequence if len(arr) > 0]
 
-        flatten_parallel_map = [k for b in parallel_map for k in b]
+        existed = set([k for b in sequence for k in b])
 
         # about other remainings
         remains = [
             [k] for k in pending \
-                if k in set(flatten_parallel_map) ^ set(include_jobs)
+                if k in existed ^ set(include_jobs)
                 # not ( in flatten_parallel_map ) and ( in include_jobs )
         ] 
-        
-        seq = [
-            *parallel_map,
+
+
+        sequence = [
+            *sequence,
             *remains
         ]
 
+        print(f"seqnce: {sequence}")
+
         new_seq = []
-        for arr in seq:
+        for arr in sequence:
             if not isinstance(arr, list):
                 continue
             if len(arr) < max_parallel:
                 new_seq.append(arr)
             else:
                 new_seq.extend(list(batched(arr, max_parallel)))
-        seq = [list(b) for b in new_seq]
+        sequence = [list(b) for b in new_seq]
 
-        logger.info(f"\n\n     🫡 Calculation Schedule (max_parallel={max_parallel})\n")
-        for i, b in enumerate(seq):
-            num = f"({i+1}) "
+        logger.info(f"\n\n     🫡  Calculation Schedule (max_parallel={max_parallel})\n")
+        for i, b in enumerate(sequence):
+            num = f"({i+1})" + " "*(int(math.log10(len(sequence))) - int(math.log10(i + 1)) + 1)
             display_text = draw_box(str(", ".join(b)))
             display_text = display_text.splitlines()
             display_text = [
@@ -159,21 +174,7 @@ class Scheduler:
             ]
             print("\n".join(display_text))
 
-        return seq
+        return sequence
 
-    
-    # def has_loop(self, deps: dict):
-    #     for key in deps:
-    #         path = []
-    #         curr = key
-    #         while curr in deps:
-    #             if curr in path:
-    #                 # logger.error(f"\nloop dependencies found.\n")
-    #                 return f"{" -> ".join(path)} -> {curr}"
-    #             path.append(curr)
-    #             curr = deps[curr]
-
-    #     return False
-        
 
 

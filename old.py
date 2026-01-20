@@ -446,7 +446,7 @@ def start_simulating(json_path: str, run=True):
     binary_default = meta['binary_default'] if 'binary_default' in meta.keys() else "pw.x"
     job_bins = meta['binary_map'] if 'binary_map' in meta.keys() else None
 
-    checkpoint_map = meta['checkpoint_map'] if "checkpoint_map" in meta.keys() else {}
+    use_checkpoint = meta['use_checkpoint'] if "use_checkpoint" in meta.keys() else {}
     key_to_prevent_default = meta['prevent_default'] if "prevent_default" in meta.keys() else []
 
     pending = process_at_runtime(json_path) 
@@ -477,7 +477,7 @@ def start_simulating(json_path: str, run=True):
         if job_bins is not None and job_id in job_bins:
             job_bin = job_bins[job_id]
 
-        key_to_cp = checkpoint_map[job_id] if job_id in checkpoint_map else None
+        key_to_cp = use_checkpoint[job_id] if job_id in use_checkpoint else None
         
         write_from_json_script_at_runtime(
             job_id, job_data, 

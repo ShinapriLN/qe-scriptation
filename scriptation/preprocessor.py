@@ -2,22 +2,11 @@
 
 import json
 
-from pprint import pprint as pp
 from pathlib import Path
 import logging
+from pprint import pprint as pp
 
 logger = logging.getLogger(__name__)
-
-# - `project_dir` - project directory for calculation
-# - `pseudo_dir`- path to pseudopotentials directory
-# - `n_proc` - number of process used with open mpi ( default is 4 )
-# - `binary_default` - binary use in calculation as default ( default is `pw.x` )
-# - `binary_map` - organize what key to use what binary
-# - `checkpoint_map` - specify key(s) to make the key calculate from that job
-# - `prevent_default` - specify key to prevent default script but use it's own
-# - `exclude_keys` - specify key(s) to prevent the key from calculation
-# - `include_keys` - specify key(s) to only include_keys in calculation
-# - `start_at_key` - specify a key to start ( default is first key below `default` if not exists start from `default` )
 
 class Preprocessor:
     def __init__(self, json_path):
@@ -65,8 +54,45 @@ class Preprocessor:
                             }
                         }
                     )
+        
+        pending = self.preprocess_space(pending)
 
         return pending
+    
+    def preprocess_space(self, pending: dict):
+        space = self.config.get("space", None)
+
+        if space is None:
+            return pending
+        
+        for sp in space:
+            pending = getattr(self, f"preprocess_{sp}")(pending)
+
+        return pending
+    
+
+    def preprocess_stress_strain(self, pending):
+        stress_strain_config = self.config['space']['stress_strain']
+
+        for ss in stress_strain_config:
+            key = ss['key']
+            delta = ss['delta']
+
+            data = pending[key]
+            key_idx = list(pending).index(key)
+
+            pending.pop(key)
+
+            pending = list(pending.items())
+            for d in delta:
+                data['space'] = { "delta":  d}
+                for i in range(6):
+                    pending.insert(key_idx, ( f"{key}-[{d}]-{i}", data ))
+
+            pending = dict(pending)
+
+        return pending
+
 
     def valid_pp_path(self, data: dict, json_path: Path):
 
@@ -116,7 +142,7 @@ class Preprocessor:
             logger.info(f"\n\n     😎 `binary_map` were not set -> all keys use default binary_map {config['binary_default']}\n")
             config['binary_map'] = {k:config['binary_default'] for k in data.keys()}
         else:
-            config['binary_map'].update({k: config['default'] for k in data.keys() if k not in config['binary_map']})
+            config['binary_map'].update({k: config['binary_default'] for k in data.keys() if k not in config['binary_map']})
 
         return config, data
 

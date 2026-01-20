@@ -2,7 +2,7 @@
 from pathlib import Path
 
 ######### Don't forget to change the path!!!1
-project_path = Path("/home/shinapri/Documents/quantum-espresso/scriptation-2/mg2feh6")
+project_path = Path("mg2feh6")
 
 
 def get_position(file):
@@ -16,5 +16,6 @@ def get_position(file):
 
 
 def get_relax_position():
+    position_list = get_position(project_path / "relax/relax.out")
     
-    return get_position(project_path / "relax/relax.out")
+    return "\n   ".join(position_list)

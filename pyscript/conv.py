@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 ######### Don't forget to change the path!!!1
-project_path = Path("/home/shinapri/Documents/quantum-espresso/scriptation-2/mg2feh6")
+project_path = Path("mg2feh6")
 
 KP = [4, 5, 6, 7, 8]
 TEST_ECUT = [30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
